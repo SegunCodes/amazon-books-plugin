@@ -56,11 +56,15 @@ function abi_store_book($book) {
     $price = $book['Offers']['Listings'][0]['Price']['DisplayAmount'];
     $url = $book['DetailPageURL'];
 
+    // Extract genre dynamically from API response
+    $genre = !empty($book['ItemInfo']['Classifications']['Binding']) ? $book['ItemInfo']['Classifications']['Binding'] : 'Unknown';
+
     $post_data = array(
         'post_title'    => $title,
         'post_content'  => "$author - $price <br><img src='$cover'><br><a href='$url' target='_blank'>Buy on Amazon</a>",
         'post_status'   => 'publish',
-        'post_type'     => 'amazon_books'
+        'post_type'     => 'amazon_books',
+        'meta_input'    => array('book_genre' => $genre)
     );
 
     wp_insert_post($post_data);
