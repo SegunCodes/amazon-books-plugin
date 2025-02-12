@@ -14,38 +14,52 @@ function abi_fetch_books_from_amazon() {
         return;
     }
 
-    $url = "https://webservices.amazon.com/paapi5/searchitems";
-    $params = array(
-        "Keywords" => $genre,
-        "Resources" => ["Images.Primary.Medium", "ItemInfo.Title", "ItemInfo.ByLineInfo", "Offers.Listings.Price"],
-        "PartnerTag" => $associate_tag,
-        "PartnerType" => "Associates",
-        "Marketplace" => "www.amazon.com"
-    );
-    
-    $args = array(
-        'body'    => json_encode($params),
-        'headers' => array(
-            'Content-Type'  => 'application/json',
-            'X-Amz-Date'    => gmdate('Ymd\THis\Z'),
-            'Authorization' => "AWS4-HMAC-SHA256 Credential=$api_key"
-        )
-    );
+    $total_books_fetched = 0;
+    $max_pages = 5;
+    $items_per_page = 20;
 
-    $response = wp_remote_post($url, $args);
+    for ($page = 1; $page <= $max_pages; $page++) {
+        $url = "https://webservices.amazon.com/paapi5/searchitems";
+        $params = array(
+            "Keywords" => $genre,
+            "Resources" => ["Images.Primary.Medium", "ItemInfo.Title", "ItemInfo.ByLineInfo", "Offers.Listings.Price"],
+            "PartnerTag" => $associate_tag,
+            "PartnerType" => "Associates",
+            "Marketplace" => "www.amazon.com",
+            "ItemCount" => $items_per_page,
+            "ItemPage" => $page
+        );
 
-    if (is_wp_error($response)) {
-        return;
-    }
-    
-    $body = json_decode(wp_remote_retrieve_body($response), true);
-    
-    if (!isset($body['SearchResult']['Items'])) {
-        return;
-    }
-    
-    foreach ($body['SearchResult']['Items'] as $book) {
-        abi_store_book($book);
+        $args = array(
+            'body'    => json_encode($params),
+            'headers' => array(
+                'Content-Type'  => 'application/json',
+                'X-Amz-Date'    => gmdate('Ymd\THis\Z'),
+                'Authorization' => "AWS4-HMAC-SHA256 Credential=$api_key"
+            )
+        );
+
+        $response = wp_remote_post($url, $args);
+
+        if (is_wp_error($response)) {
+            continue;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (!isset($body['SearchResult']['Items'])) {
+            continue;
+        }
+
+        foreach ($body['SearchResult']['Items'] as $book) {
+            abi_store_book($book);
+            $total_books_fetched++;
+        }
+
+        // Stop fetching if no more results are available
+        if (count($body['SearchResult']['Items']) < $items_per_page) {
+            break;
+        }
     }
 }
 

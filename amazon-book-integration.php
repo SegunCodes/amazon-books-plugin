@@ -2,8 +2,8 @@
 /*
 Plugin Name: Amazon Book Integration
 Description: Fetch and display books from Amazon by genre with purchase links.
-Version: 1.0
-Author: Olusegun Joe-Alabi
+Version: 1.1
+Author: O.J.A
 License: GPL2
 */
 
